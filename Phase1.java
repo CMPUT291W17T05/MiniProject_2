@@ -1,4 +1,5 @@
 import java.util.*;
+import java.util.regex.*;
 import java.io.*;
 
 /**
@@ -42,7 +43,6 @@ public class Phase1 {
 			while (rawData != null) {
 
 				if (rawData.startsWith("<status>")) {
-					System.out.println("In here");
 					currentID = getID(rawData);
 					parseTweet(rawData);
 					parseTerms(rawData);
@@ -72,10 +72,13 @@ public class Phase1 {
 
 	public void parseTerms(String line) throws Exception {
 
-		String texts[] = line.substring(line.indexOf("<text>") + 6, line.indexOf("</text>")).split(" ");
-		String names[] = line.substring(line.indexOf("<name>") + 6, line.indexOf("</name>")).split(" ");
-		String locations[] = line.substring(line.indexOf("<location>") + 10, line.indexOf("</location>")).split(" ");
+		String texts = line.substring(line.indexOf("<text>") + 6, line.indexOf("</text>"));
+		String names = line.substring(line.indexOf("<name>") + 6, line.indexOf("</name>"));
+		String locations = line.substring(line.indexOf("<location>") + 10, line.indexOf("</location>"));
 
+		matchAndSave(texts, "t");
+		matchAndSave(names, "n");
+		matchAndSave(locations, "l");
 	}
 
 	public void parseDate(String line) throws Exception {
@@ -86,6 +89,35 @@ public class Phase1 {
 
 	public String getID(String line) {
 		return line.substring(line.indexOf("<id>") + 4, line.indexOf("</id>"));
+	}
+
+	public void matchAndSave(String data, String format) throws Exception {
+		String pattern = "[0-9a-zA-Z_]+";
+		Pattern p = Pattern.compile(pattern);
+		Matcher m = p.matcher(data);
+
+		while (m.find()) {
+			if (checkIfShouldBeIgnored(data, m.start(), m.end())) {
+				termsWriter.write(format + "-" + data.substring(m.start(), m.end()).toLowerCase() + ":" + currentID + "\n");
+			}
+		}
+	}
+
+	public Boolean checkIfShouldBeIgnored(String data, int start, int end) {
+
+		if ((end - start) < 3) {
+			return false;
+		}
+
+		else if ((start - 2) < 0) {
+			return true;
+		}
+
+		else if (data.substring(start - 2, start).equals("&#")) {
+			return false;
+		}
+
+		return true;
 	}
 }
 
