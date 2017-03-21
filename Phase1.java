@@ -92,13 +92,20 @@ public class Phase1 {
 	}
 
 	public void matchAndSave(String data, String format) throws Exception {
+		
+		data = data.replaceAll("&#[0-9]+;", "");
+
 		String pattern = "[0-9a-zA-Z_]+";
 		Pattern p = Pattern.compile(pattern);
 		Matcher m = p.matcher(data);
 
+		String toSave[] = {};
 		while (m.find()) {
-			if (checkIfShouldBeIgnored(data, m.start(), m.end())) {
-				termsWriter.write(format + "-" + data.substring(m.start(), m.end()).toLowerCase() + ":" + currentID + "\n");
+			toSave = processRegexResult(data.substring(m.start(), m.end()));
+			for (String save: toSave) {
+				if (save != null && save.length() > 2) {
+					termsWriter.write(format + "-" + save.replaceAll("&", "").replaceAll("#", "").toLowerCase() + ":" + currentID + "\n");
+				}
 			}
 		}
 	}
@@ -119,7 +126,28 @@ public class Phase1 {
 
 		return true;
 	}
-}
 
-// probably best to do the splitting in a separate function before splitting. Strip off other characters. 
-// Or you'll probably need a special way to parse the substrings[] returned and get maybe multiple words from them. By indexing and whatnot. 
+	public String[] processRegexResult(String dataSubString) {
+
+		if (!dataSubString.contains("&") && !dataSubString.contains("#")) {
+			return new String[] {dataSubString};
+		}
+
+		else if (dataSubString.contains("&") && !dataSubString.contains("#")) {
+			return dataSubString.split("&");
+		}
+
+		else if (!dataSubString.contains("&") && dataSubString.contains("#")) {
+			return dataSubString.split("#");
+		}
+
+		String result = "";
+		String chunks[] = dataSubString.split("&#[0-9]+");
+		//return chunks;
+
+		for (String chunk: chunks) {
+			result += chunk;
+		}
+		return new String[] {result};//.replace("#", "").replace("&", "");
+	} 
+}
