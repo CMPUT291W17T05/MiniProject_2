@@ -3,7 +3,8 @@ from subprocess import Popen
 
 def sort_file(filename):
     # call sort on the file, and pipe it back into itself
-    Popen("rm -f tmp && cat " + filename + " > tmp && rm -f " + filename + " && sort -u tmp > " + filename + " && rm -f tmp")
+    # Popen("cat " + filename + " > tmp && rm -f " + filename + " && sort -u tmp > " + filename + " && rm -f tmp")
+    return
 
 def main():
     # Tweets
