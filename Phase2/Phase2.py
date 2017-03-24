@@ -57,4 +57,5 @@ def main():
         database.put(bytes(term, encoding="ascii"), tid)
 
     database.close()
+
 main()
