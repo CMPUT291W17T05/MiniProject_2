@@ -1,22 +1,25 @@
-from bsddb3 import db
 import sys
+import QueryProcessor
+from QueryProcessor import *
+import EntryPrinter
+from EntryPrinter import *
 
 # Start off with just making sure the queries can be correct.
 def checkAndSortArgGrammer(args):
 	queries = {}
 
-	for entry in args:
-		query = entry
-		if "text" in query or "name" in query or "location" in query:
+	for query in args:
+		query = query.strip("'")
+		if query.startswith("text") or query.startswith("name") or query.startswith("location"):
 			if ":" in query:
 				colonIndex = query.find(":")
 				queries[query] = [query[0:colonIndex], query[colonIndex:colonIndex+1], query[colonIndex+1:]]
 			
 			else:
 				print("Query", query, " does not contain ':', rejecting.\n")
-		elif "date" in query:
+		elif query.startswith("date"):
 			if ":" in query or ">" in query or "<" in query:
-				queries[query] = [query[0:5], query[5:6], query[6:]]
+				queries[query] = [query[0:4], query[4:5], query[5:]]
 			else:
 				print("Query", query, " does not contain valid prefix, rejecting\n")
 
@@ -37,9 +40,14 @@ def main():
 	queries = checkAndSortArgGrammer(args)
 
 	if len(queries) == 1:
-		# Process a single conditional query
+		for q in queries:
+			results = QueryProcessor.executeSingleQuery(queries[q])
+
+		for tweet in results:
+			EntryPrinter.printEntry(tweet)
 
 	else:
+		print("lol")
 		# Process a multi-conditional query
 
 main()
