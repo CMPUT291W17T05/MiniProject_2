@@ -16,6 +16,7 @@ def main():
     sort_file('tweets.txt')
 
     database = db.DB()
+    database.set_flags(db.DB_DUP)
     database.open('tw.idx', None, db.DB_HASH, db.DB_CREATE)
 
     for line in tweets:
@@ -33,6 +34,7 @@ def main():
     sort_file('terms.txt')
 
     database = db.DB()
+    database.set_flags(db.DB_DUP)
     database.open('te.idx', None, db.DB_BTREE, db.DB_CREATE)
     
     for line in terms:
@@ -50,6 +52,7 @@ def main():
     sort_file('dates.txt')
 
     database = db.DB()
+    database.set_flags(db.DB_DUP)
     database.open('da.idx', None, db.DB_BTREE, db.DB_CREATE)
 
     for line in dates:

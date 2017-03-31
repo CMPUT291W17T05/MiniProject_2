@@ -16,7 +16,7 @@ def executeSingleQuery(query):
 
 	else:
 		termsDB = db.DB()
-		#termsDB.set_flags(db.DB_DUP)
+		termsDB.set_flags(db.DB_DUP)
 		termsDB.open('te.idx', None, db.DB_BTREE, db.DB_DIRTY_READ)
 
 		# Handle all others, aka te.idx
@@ -34,23 +34,49 @@ def executeSingleQuery(query):
 
 		termsDB.close()
 		print("FirstResults: ", firstResults)
+		#print(len(firstResults))
 
 	tweetDB = db.DB()
 	tweetDB.open('tw.idx', None, db.DB_HASH, db.DB_DIRTY_READ)
 
 	for index in firstResults:
-		finalResults.append(str(tweetDB[index.encode()], 'ascii'))
+		finalResults.append(str(tweetDB[index], 'ascii'))
 
 	tweetDB.close()
 
 	return finalResults
 
+#def getResults(db, key):
+
+#	results = []
+#	if db.has_key(key.encode()):
+#		cur = db.cursor()
+#		cur.set(key.encode())
+#		iter = cur.current()
+#		while iter:
+#			results.append(iter[1])
+#			iter = cur.next_dup()
+#		cur.close()
+#		return results
+#
+#	return []
+
+#def getResults(db, key):
+
+#	results = []
+#	if db.has_key(key.encode()):
+#		cur = db.cursor()
+#		iter = cur.first()
+#		while iter:
+#			results.append(iter[1])
+#			iter = cur.next()
+#
+#		cur.close()
+#		return results
+#	return []
+
 def getResults(db, key):
 	if db.has_key(key.encode()):
-		print("Before return ", str(db[key.encode()], 'ascii'))
 		return str(db[key.encode()], 'ascii').split(";")
 
-	else:
-		return []
-
-# Still needs some work and a cursor will be needed.
+	return []
