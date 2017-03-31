@@ -1,4 +1,5 @@
 from bsddb3 import db
+from datetime import datetime
 
 def executeSingleQuery(query):
 
@@ -12,14 +13,14 @@ def executeSingleQuery(query):
 
 		datesDB = db.DB()
 		datesDB.open('da.idx', None, db.DB_BTREE, db.DB_DIRTY_READ)
+		key = query[2]
 
 		if query[1] == ":":
-			key = ''.join([query[2]])
-			firstResults = getResults(datesDB, key)
+			firstResults = getEqualResults(datesDB, key)
 
+		# Remember this stuff is stored in a B+ tree, not like the .txt file. 
 		elif query[1] == "<":
-			# Greater than search
-			pass
+			firstResults = getGreaterResults(datesDB, key)
 
 		else:
 			# > Less than. 
@@ -34,15 +35,15 @@ def executeSingleQuery(query):
 		# Handle all others, aka te.idx
 		if query[0] != 'term':
 			key = ''.join([query[0][0], '-', query[2]])
-			firstResults = getResults(termsDB, key)
+			firstResults = getEqualResults(termsDB, key)
 
 		else:
 			key1 = ''.join(['t', '-', query[2]])
 			key2 = ''.join(['n', '-', query[2]])
 			key3 = ''.join(['l', '-', query[2]])
-			firstResults = firstResults + getResults(termsDB, key1)
-			firstResults = firstResults + getResults(termsDB, key2)
-			firstResults = firstResults + getResults(termsDB, key3)
+			firstResults = firstResults + getEqualResults(termsDB, key1)
+			firstResults = firstResults + getEqualResults(termsDB, key2)
+			firstResults = firstResults + getEqualResults(termsDB, key3)
 
 		termsDB.close()
 
@@ -57,7 +58,7 @@ def executeSingleQuery(query):
 
 	return finalResults
 
-def getResults(db, key):
+def getEqualResults(db, key):
 
 	results = []
 	if db.has_key(key.encode()):
@@ -68,11 +69,36 @@ def getResults(db, key):
 			results.append(iter[1])
 			iter = cur.next_dup()
 		cur.close()
-		return results
+		return list(set(results))
 	return []
 
+def getGreaterResults(db, key):
+
+	results = []
+	cur = db.cursor()
+	iter = cur.last()
+
+	while iter:
+
+		if not beforeOrAfter(key, str(iter[0], 'ascii')):
+			return list(set(results))
+
+		results.append(iter[1])
+		iter = cur.prev()
+
+	return results
+
+# True if received comes after target
+# false if received comes before target, or they are identical
+def beforeOrAfter(target, received):
+
+	if target == received:
+		return False
+
+	return datetime.strptime(received, "%Y/%m/%d") > datetime.strptime(target, "%Y/%m/%d")
+
 ## for the traversal of an entire index for debugging sake
-#def getResults(db, key):
+#def getEqualResults(db, key):
 #
 #	results = []
 #	cur = db.cursor()
