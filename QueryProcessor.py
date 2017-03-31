@@ -19,12 +19,11 @@ def executeSingleQuery(query):
 			firstResults = getEqualResults(datesDB, key)
 
 		# Remember this stuff is stored in a B+ tree, not like the .txt file. 
-		elif query[1] == "<":
+		elif query[1] == ">":
 			firstResults = getGreaterResults(datesDB, key)
 
 		else:
-			# > Less than. 
-			pass
+			firstResults = getLesserResults(datesDB, key)
 
 		datesDB.close()
 
@@ -80,7 +79,10 @@ def getGreaterResults(db, key):
 
 	while iter:
 
-		if not beforeOrAfter(key, str(iter[0], 'ascii')):
+		if iter[0] == key.encode():
+			return list(set(results))
+
+		elif not beforeOrAfter(key, str(iter[0], 'ascii')):
 			return list(set(results))
 
 		results.append(iter[1])
@@ -88,12 +90,28 @@ def getGreaterResults(db, key):
 
 	return results
 
-# True if received comes after target
-# false if received comes before target, or they are identical
-def beforeOrAfter(target, received):
+def getLesserResults(db, key):
 
-	if target == received:
-		return False
+	results = []
+	cur = db.cursor()
+	iter = cur.first()
+
+	while iter:
+
+		if iter[0] == key.encode():
+			return list(set(results))
+
+		elif beforeOrAfter(key, str(iter[0], 'ascii')):
+			return list(set(results))
+
+		results.append(iter[1])
+		iter = cur.next()
+
+	return results
+
+# True if received comes after target
+# false if received comes before target
+def beforeOrAfter(target, received):
 
 	return datetime.strptime(received, "%Y/%m/%d") > datetime.strptime(target, "%Y/%m/%d")
 
