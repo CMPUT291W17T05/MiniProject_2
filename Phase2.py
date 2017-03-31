@@ -3,7 +3,7 @@ from subprocess import Popen
 
 def sort_file(filename):
     # call sort on the file, and pipe it back into itself
-    # Popen("cat " + filename + " > tmp && rm -f " + filename + " && sort -u tmp > " + filename + " && rm -f tmp")
+    #Popen("cat " + filename + " > tmp && rm -f " + filename + " && sort -u tmp > " + filename + " && rm -f tmp")
     return
 
 def main():
@@ -18,12 +18,14 @@ def main():
     database = db.DB()
     database.set_flags(db.DB_DUP)
     database.open('tw.idx', None, db.DB_HASH, db.DB_CREATE)
+    cur = database.cursor()
 
     for line in tweets:
         tid, rec = line[0:9], line[10:]
-        database.put(bytes(tid, encoding="ascii"), rec)
+        cur.put(bytes(tid.strip('\n'), encoding="ascii"), rec.strip('\n'), db.DB_KEYFIRST)
     
     database.close()
+    cur.close()
 
     # Terms
     try:
@@ -36,12 +38,14 @@ def main():
     database = db.DB()
     database.set_flags(db.DB_DUP)
     database.open('te.idx', None, db.DB_BTREE, db.DB_CREATE)
+    cur = database.cursor()
     
     for line in terms:
         term, tid = line.split(":")
-        database.put(bytes(term, encoding="ascii"), tid)
+        cur.put(bytes(term.strip('\n'), encoding="ascii"), tid.strip('\n'), db.DB_KEYFIRST)
 
     database.close()
+    cur.close()
 
     # Dates
     try:
@@ -54,11 +58,13 @@ def main():
     database = db.DB()
     database.set_flags(db.DB_DUP)
     database.open('da.idx', None, db.DB_BTREE, db.DB_CREATE)
+    cur = database.cursor()
 
     for line in dates:
         date, tid = line.split(":")
-        database.put(bytes(term, encoding="ascii"), tid)
+        cur.put(bytes(term.strip('\n'), encoding="ascii"), tid.strip('\n'), db.DB_KEYFIRST)
 
     database.close()
+    cur.close()
 
 main()
