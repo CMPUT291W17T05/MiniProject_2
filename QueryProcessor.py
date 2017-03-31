@@ -4,19 +4,31 @@ def executeSingleQuery(query):
 
 	# Need DB for tweets one way or another.
 	# Actually, you have this, but move it till later, when we find the info on the other one. 
-
-
 	firstResults = []
 	finalResults = []
 
 	# Now find out what other indexes we will be using.
-	if query[0] == "date":
-		print("lol")
-		# Handle dates
+	if query[0].startswith("date"):
+
+		datesDB = db.DB()
+		datesDB.open('da.idx', None, db.DB_BTREE, db.DB_DIRTY_READ)
+
+		if query[1] == ":":
+			key = ''.join([query[2]])
+			firstResults = getResults(datesDB, key)
+
+		elif query[1] == "<":
+			# Greater than search
+			pass
+
+		else:
+			# > Less than. 
+			pass
+
+		datesDB.close()
 
 	else:
 		termsDB = db.DB()
-		#termsDB.set_flags(db.DB_DUP)
 		termsDB.open('te.idx', None, db.DB_BTREE, db.DB_DIRTY_READ)
 
 		# Handle all others, aka te.idx
@@ -33,8 +45,6 @@ def executeSingleQuery(query):
 			firstResults = firstResults + getResults(termsDB, key3)
 
 		termsDB.close()
-		#print("FirstResults: ", firstResults)
-		#print(len(firstResults))
 
 	tweetDB = db.DB()
 	tweetDB.open('tw.idx', None, db.DB_HASH, db.DB_DIRTY_READ)
@@ -61,8 +71,9 @@ def getResults(db, key):
 		return results
 	return []
 
+## for the traversal of an entire index for debugging sake
 #def getResults(db, key):
-
+#
 #	results = []
 #	cur = db.cursor()
 #	iter = cur.first()
@@ -73,8 +84,6 @@ def getResults(db, key):
 #	return results
 #	return []
 
-#def getResults(db, key):
-#	if db.has_key(key.encode()):
-#		return str(db[key.encode()], 'ascii').split(";")
-#
-#	return []
+# need to work on > and < searches
+# also need to refine function for implemneting multiple constraints. 
+# refactor out getting firstresults etc

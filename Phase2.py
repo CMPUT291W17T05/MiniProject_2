@@ -62,7 +62,7 @@ def main():
 
     for line in dates:
         date, tid = line.split(":")
-        cur.put(bytes(term.strip('\n'), encoding="ascii"), tid.strip('\n'), db.DB_KEYFIRST)
+        cur.put(bytes(date.strip('\n'), encoding="ascii"), tid.strip('\n'), db.DB_KEYFIRST)
 
     database.close()
     cur.close()
