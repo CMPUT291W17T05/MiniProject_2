@@ -6,7 +6,6 @@ def executeSingleQuery(query):
 	# Need DB for tweets one way or another.
 	# Actually, you have this, but move it till later, when we find the info on the other one. 
 	firstResults = []
-	finalResults = []
 
 	# Now find out what other indexes we will be using.
 	if query[0].startswith("date"):
@@ -46,12 +45,16 @@ def executeSingleQuery(query):
 
 		termsDB.close()
 
+	return firstResults
+
+def grabHashResults(firstResults):
+
+	finalResults = []
 	tweetDB = db.DB()
 	tweetDB.open('tw.idx', None, db.DB_HASH, db.DB_DIRTY_READ)
 
 	for index in firstResults:
 		finalResults.append(str(tweetDB[index], 'ascii'))
-		#finalResults.append(tweetDB[index])
 
 	tweetDB.close()
 
@@ -130,4 +133,4 @@ def beforeOrAfter(target, received):
 
 # need to work on > and < searches
 # also need to refine function for implemneting multiple constraints. 
-# refactor out getting firstresults etc
+# refactor out getting firstResults etc

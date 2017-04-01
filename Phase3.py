@@ -13,13 +13,13 @@ def checkAndSortArgGrammer(args):
 		if query.startswith("text") or query.startswith("name") or query.startswith("location"):
 			if ":" in query:
 				colonIndex = query.find(":")
-				queries[query] = [query[0:colonIndex], query[colonIndex:colonIndex+1], query[colonIndex+1:]]
+				queries[query] = [query[0:colonIndex], query[colonIndex:colonIndex+1], query[colonIndex+1:].strip("',")]
 			
 			else:
 				print("Query", query, " does not contain ':', rejecting.\n")
 		elif query.startswith("date"):
 			if ":" in query or ">" in query or "<" in query:
-				queries[query] = [query[0:4], query[4:5], query[5:]]
+				queries[query] = [query[0:4], query[4:5], query[5:15]]
 			else:
 				print("Query", query, " does not contain valid prefix, rejecting\n")
 
@@ -41,13 +41,32 @@ def main():
 
 	if len(queries) == 1:
 		for q in queries:
-			results = QueryProcessor.executeSingleQuery(queries[q])
+			print(queries[q])
+			keys = QueryProcessor.executeSingleQuery(queries[q])
+			results = QueryProcessor.grabHashResults(keys)
 
 		for tweet in results:
 			EntryPrinter.printEntry(tweet)
 
 	else:
-		print("lol")
 		# Process a multi-conditional query
+		keys = set()
+		firstDone = False
 
+		#print(queries)
+		for q in queries:
+			#print(queries[q])
+			if not firstDone:
+				keys = set(QueryProcessor.executeSingleQuery(queries[q]))
+				firstDone = True
+				#print(keys)
+
+			else:
+				keys = set.intersection(keys, set(QueryProcessor.executeSingleQuery(queries[q])))
+				#print(keys)
+
+		results = QueryProcessor.grabHashResults(list(keys))
+
+		for tweet in results:
+			EntryPrinter.printEntry(tweet)
 main()
