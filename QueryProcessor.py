@@ -136,9 +136,18 @@ def getLesserResults(db, key, cur):
 
 def getWildCardResults(db, key, cur):
 	
-	results = getEqualResults(db, key, cur)
+	results = []
 	cur.set(key.encode())
 	iter = cur.next()
+
+	iter = cur.first()
+	while iter:
+		if str(iter[0], 'ascii').startswith(key):
+			results = getEqualResults(db, str(iter[0], 'ascii'), cur)
+			iter = cur.next()
+			break
+		iter = cur.next()
+
 
 	while iter:
 
