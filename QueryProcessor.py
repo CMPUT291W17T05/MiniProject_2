@@ -15,33 +15,53 @@ def executeSingleQuery(query):
 		key = query[2]
 
 		if query[1] == ":":
-			firstResults = getEqualResults(datesDB, key)
+			firstResults = getEqualResults(datesDB, key, datesDB.cursor())
 
 		# Remember this stuff is stored in a B+ tree, not like the .txt file. 
 		elif query[1] == ">":
-			firstResults = getGreaterResults(datesDB, key)
+			firstResults = getGreaterResults(datesDB, key, datesDB.cursor())
 
 		else:
-			firstResults = getLesserResults(datesDB, key)
+			firstResults = getLesserResults(datesDB, key, datesDB.cursor())
 
 		datesDB.close()
 
 	else:
+		# For WildCards, make sure you strip off the %
 		termsDB = db.DB()
 		termsDB.open('te.idx', None, db.DB_BTREE, db.DB_DIRTY_READ)
 
 		# Handle all others, aka te.idx
 		if query[0] != 'term':
 			key = ''.join([query[0][0], '-', query[2]])
-			firstResults = getEqualResults(termsDB, key)
+
+			if key[-1] == '%':
+				firstResults = getWildCardResults(termsDB, key.strip('%'), termsDB.cursor())
+
+			else:
+				cur = termsDB.cursor()
+				firstResults = getEqualResults(termsDB, key, cur)
+				cur.close()
 
 		else:
 			key1 = ''.join(['t', '-', query[2]])
 			key2 = ''.join(['n', '-', query[2]])
 			key3 = ''.join(['l', '-', query[2]])
-			firstResults = firstResults + getEqualResults(termsDB, key1)
-			firstResults = firstResults + getEqualResults(termsDB, key2)
-			firstResults = firstResults + getEqualResults(termsDB, key3)
+
+			if key1[-1] == '%':
+
+				firstResults = getWildCardResults(termsDB, key1.strip('%'), termsDB.cursor())
+				firstResults = firstResults + getWildCardResults(termsDB, key2.strip('%'), termsDB.cursor())
+				firstResults = firstResults + getWildCardResults(termsDB, key3.strip('%'), termsDB.cursor())
+			
+			else:
+				cur = termsDB.cursor()
+				
+				firstResults = getEqualResults(termsDB, key1, cur)
+				firstResults = firstResults + getEqualResults(termsDB, key2, cur)
+				firstResults = firstResults + getEqualResults(termsDB, key3, cur)
+
+				cur.close()
 
 		termsDB.close()
 
@@ -60,77 +80,82 @@ def grabHashResults(firstResults):
 
 	return finalResults
 
-def getEqualResults(db, key):
+def getEqualResults(db, key, cur):
 
 	results = []
 	if db.has_key(key.encode()):
-		cur = db.cursor()
 		cur.set(key.encode())
 		iter = cur.current()
 		while iter:
 			results.append(iter[1])
 			iter = cur.next_dup()
-		cur.close()
-		return list(set(results))
+		return results
 	return []
 
-def getGreaterResults(db, key):
+def getGreaterResults(db, key, cur):
 
 	results = []
-	cur = db.cursor()
 	iter = cur.last()
 
 	while iter:
 
 		if iter[0] == key.encode():
-			return list(set(results))
+			cur.close()
+			return results
 
 		elif not beforeOrAfter(key, str(iter[0], 'ascii')):
-			return list(set(results))
+			cur.close()
+			return results
 
 		results.append(iter[1])
 		iter = cur.prev()
 
+	cur.close()
 	return results
 
-def getLesserResults(db, key):
+def getLesserResults(db, key, cur):
 
 	results = []
-	cur = db.cursor()
 	iter = cur.first()
 
 	while iter:
 
 		if iter[0] == key.encode():
-			return list(set(results))
+			cur.close()
+			return results
 
 		elif beforeOrAfter(key, str(iter[0], 'ascii')):
-			return list(set(results))
+			cur.close()
+			return results
 
 		results.append(iter[1])
 		iter = cur.next()
 
+	cur.close()
 	return results
+
+def getWildCardResults(db, key, cur):
+	
+	results = getEqualResults(db, key, cur)
+	cur.set(key.encode())
+	iter = cur.next()
+
+	while iter:
+
+		if not str(iter[0], 'ascii').startswith(key):
+			cur.close()
+			return results
+
+		results = results + getEqualResults(db, str(iter[0], 'ascii'), cur)
+		iter = cur.next()
+
+	cur.close()
+	return results
+
+
 
 # True if received comes after target
 # false if received comes before target
 def beforeOrAfter(target, received):
 
 	return datetime.strptime(received, "%Y/%m/%d") > datetime.strptime(target, "%Y/%m/%d")
-
-## for the traversal of an entire index for debugging sake
-#def getEqualResults(db, key):
-#
-#	results = []
-#	cur = db.cursor()
-#	iter = cur.first()
-#	while iter:
-#		results.append(iter)
-#		iter = cur.next()
-#	cur.close()
-#	return results
-#	return []
-
-# need to work on > and < searches
-# also need to refine function for implemneting multiple constraints. 
-# refactor out getting firstResults etc

@@ -29,7 +29,8 @@ def checkAndSortArgGrammer(args):
 	return queries
 
 def main():
-	args = str(sys.argv)
+
+	args = str(sys.argv).lower()
 
 	if args[-1] == "]":
 		args = args[0:-1]
@@ -41,9 +42,8 @@ def main():
 
 	if len(queries) == 1:
 		for q in queries:
-			print(queries[q])
-			keys = QueryProcessor.executeSingleQuery(queries[q])
-			results = QueryProcessor.grabHashResults(keys)
+			keys = set(QueryProcessor.executeSingleQuery(queries[q]))
+			results = QueryProcessor.grabHashResults(list(keys))
 
 		for tweet in results:
 			EntryPrinter.printEntry(tweet)
