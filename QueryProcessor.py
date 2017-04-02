@@ -3,60 +3,62 @@ from datetime import datetime
 
 def executeSingleQuery(query):
 
-	# Need DB for tweets one way or another.
-	# Actually, you have this, but move it till later, when we find the info on the other one. 
 	firstResults = []
 
-	# Now find out what other indexes we will be using.
+	# Dates
 	if query[0].startswith("date"):
 
 		datesDB = db.DB()
 		datesDB.open('da.idx', None, db.DB_BTREE, db.DB_DIRTY_READ)
 		key = query[2]
 
+		# Equality search
 		if query[1] == ":":
 			firstResults = getEqualResults(datesDB, key, datesDB.cursor())
 
-		# Remember this stuff is stored in a B+ tree, not like the .txt file. 
+		# Date greater than given param
 		elif query[1] == ">":
 			firstResults = getGreaterResults(datesDB, key, datesDB.cursor())
 
+		# Date less than given param
 		else:
 			firstResults = getLesserResults(datesDB, key, datesDB.cursor())
 
 		datesDB.close()
 
 	else:
-		# For WildCards, make sure you strip off the %
 		termsDB = db.DB()
 		termsDB.open('te.idx', None, db.DB_BTREE, db.DB_DIRTY_READ)
 
-		# Handle all others, aka te.idx
+		# Location, name or text
 		if query[0] != 'term':
 			key = ''.join([query[0][0], '-', query[2]])
 
+			# Wildcard
 			if key[-1] == '%':
 				firstResults = getWildCardResults(termsDB, key.strip('%'), termsDB.cursor())
 
+			# Identical match
 			else:
 				cur = termsDB.cursor()
 				firstResults = getEqualResults(termsDB, key, cur)
 				cur.close()
 
+		# Match all three fields. 
 		else:
 			key1 = ''.join(['t', '-', query[2]])
 			key2 = ''.join(['n', '-', query[2]])
 			key3 = ''.join(['l', '-', query[2]])
 
 			if key1[-1] == '%':
-
+				# Wildcard with all three.
 				firstResults = getWildCardResults(termsDB, key1.strip('%'), termsDB.cursor())
 				firstResults = firstResults + getWildCardResults(termsDB, key2.strip('%'), termsDB.cursor())
 				firstResults = firstResults + getWildCardResults(termsDB, key3.strip('%'), termsDB.cursor())
 			
 			else:
 				cur = termsDB.cursor()
-				
+				# Non-wildcard with all three. 
 				firstResults = getEqualResults(termsDB, key1, cur)
 				firstResults = firstResults + getEqualResults(termsDB, key2, cur)
 				firstResults = firstResults + getEqualResults(termsDB, key3, cur)
@@ -67,6 +69,8 @@ def executeSingleQuery(query):
 
 	return firstResults
 
+# This is for retrieving the tweets.
+# firstResults is a list of tweet IDs. 
 def grabHashResults(firstResults):
 
 	finalResults = []
@@ -80,6 +84,7 @@ def grabHashResults(firstResults):
 
 	return finalResults
 
+# Equality search retrieving all duplicates.
 def getEqualResults(db, key, cur):
 
 	results = []
@@ -92,6 +97,7 @@ def getEqualResults(db, key, cur):
 		return results
 	return []
 
+# Greater than date means you start from the last and progress backwards.
 def getGreaterResults(db, key, cur):
 
 	results = []
@@ -113,6 +119,7 @@ def getGreaterResults(db, key, cur):
 	cur.close()
 	return results
 
+# Less than means you start from the front and progress forwards.
 def getLesserResults(db, key, cur):
 
 	results = []
@@ -134,12 +141,15 @@ def getLesserResults(db, key, cur):
 	cur.close()
 	return results
 
+# Wildcard search. log(n) Start from beginning. Find first key that matches, begin checking for other matches. 
+# I needed to do this in the case that the pattern, while existing as part of a key, does not itself exist.
 def getWildCardResults(db, key, cur):
 	
 	results = []
 	cur.set(key.encode())
 	iter = cur.next()
 
+	# Find the first matching entry. Assume all others that will match will come after it. 
 	iter = cur.first()
 	while iter:
 		if str(iter[0], 'ascii').startswith(key):
@@ -148,7 +158,7 @@ def getWildCardResults(db, key, cur):
 			break
 		iter = cur.next()
 
-
+	# Now that you have the first match, find the rest, if they exist. 
 	while iter:
 
 		if not str(iter[0], 'ascii').startswith(key):
