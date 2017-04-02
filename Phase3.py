@@ -7,6 +7,7 @@ from EntryPrinter import *
 # CMPUT 291 Wi17
 # Mini Project Phase 3 Code
 # Commented April 2nd, 2017
+# Authors: Keith Mills, Rene Sauve-Hoover
 
 # Start off with just making sure the queries can be correct.
 def checkAndSortArgGrammer(args):

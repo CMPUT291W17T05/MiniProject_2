@@ -1,6 +1,11 @@
 from bsddb3 import db
 from datetime import datetime
 
+# CMPUT 291 Wi17
+# Mini Project Phase 3 Code
+# Commented April 2nd, 2017
+# Authors: Keith Mills, Rene Sauve-Hoover
+
 def executeSingleQuery(query):
 
 	firstResults = []
